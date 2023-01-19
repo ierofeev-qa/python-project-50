@@ -12,7 +12,7 @@ parser.add_argument('-f', '--format', help='set format of output')
 parser.add_argument('first_file', help='path to the first file')
 parser.add_argument('second_file', help='path to the second file')
 
-args = parser.parse_args()
+args = parser.parse_args(args=['file1.json', 'file2.json'])
 
 
 def dict_diff(first_dict: dict, second_dict: dict) -> dict:

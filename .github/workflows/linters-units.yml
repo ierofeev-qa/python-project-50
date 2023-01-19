@@ -1,0 +1,21 @@
+name: linter-units
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install poetry
+        run: curl -sSL https://install.python-poetry.org | python3 -
+
+      - run: poetry install
+
+      - name: Run flake8
+        run: make lint
+
+      - name: Run unittests
+        run: make test
