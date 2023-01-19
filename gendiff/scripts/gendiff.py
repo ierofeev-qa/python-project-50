@@ -2,34 +2,36 @@
 import argparse
 import json
 
-parser = argparse.ArgumentParser(
-    prog='gendiff',
-    usage='gendiff [-h] [-f FORMAT] first_file second_file',
-    description='Compares two configuration files and shows a difference.',
-)
 
-parser.add_argument('-f', '--format', help='set format of output')
-parser.add_argument('first_file', help='path to the first file')
-parser.add_argument('second_file', help='path to the second file')
+def argument_parser():
+    parser = argparse.ArgumentParser(
+        prog='gendiff',
+        usage='gendiff [-h] [-f FORMAT] first_file second_file',
+        description='Compares two configuration files and shows a difference.',
+    )
 
-args = parser.parse_args(args=['file1.json', 'file2.json'])
+    parser.add_argument('-f', '--format', help='set format of output')
+    parser.add_argument('first_file', help='path to the first file')
+    parser.add_argument('second_file', help='path to the second file')
+
+    return parser.parse_args()
 
 
 def dict_diff(first_dict: dict, second_dict: dict) -> dict:
     result = {}
+    first_dict_items = list(first_dict.items())
+    second_dict_items = list(second_dict.items())
+    union_list = first_dict_items + second_dict_items
 
-    for key, value in first_dict.items():
-        if key in second_dict and value == second_dict[key]:
-            result[f'{str(key)}: {str(value)}'] = ' '
-        elif key in second_dict and value != second_dict[key]:
-            result[f'{str(key)}: {str(value)}'] = '-'
-            result[f'{str(key)}: {str(second_dict[key])}'] = '+'
+    for item in union_list:
+        if item in first_dict_items and item in second_dict_items:
+            sign = ' '
+        elif item in first_dict_items and item not in second_dict_items:
+            sign = '-'
         else:
-            result[f'{str(key)}: {str(value)}'] = '-'
+            sign = '+'
 
-    for key, value in second_dict.items():
-        if key not in first_dict:
-            result[f'{str(key)}: {str(value)}'] = '+'
+        result[f'{str(item[0])}: {str(item[1])}'] = sign
 
     return result
 
@@ -49,6 +51,7 @@ def generate_diff(path_to_first_file: str, path_to_second_file: str) -> str:
 
 
 def main():
+    args = argument_parser()
     print(generate_diff(args.first_file, args.second_file))
 
 

@@ -18,4 +18,4 @@ jobs:
         run: make lint
 
       - name: Run unittests
-        run: make test
+        run: make run-tests

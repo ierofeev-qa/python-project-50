@@ -1,8 +1,8 @@
 install:
 	poetry install
 
-gendiff:
-	poetry run gendiff -h
+show-diff:
+	poetry run gendiff $(first_file) $(second_file)
 
 build:
 	poetry build
@@ -16,5 +16,5 @@ package-install:
 lint:
 	poetry run flake8 gendiff
 
-test:
+run-tests:
 	poetry run pytest
