@@ -9,6 +9,7 @@ packages = [{include = "gendiff"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 pytest = "^7.2.1"
+coverage = "^7.0.5"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.0.0"
