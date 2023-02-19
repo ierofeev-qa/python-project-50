@@ -10,7 +10,9 @@ def argument_parser():
         description='Compares two configuration files and shows a difference.',
     )
 
-    parser.add_argument('-f', '--format', help='set format of output')
+    parser.add_argument(
+        '-f', '--format', help='set format of output', default='stylish'
+    )
     parser.add_argument('first_file', help='path to the first file')
     parser.add_argument('second_file', help='path to the second file')
 
@@ -39,7 +41,11 @@ def dict_diff(first_dict: dict, second_dict: dict) -> list:
                 type(value) is dict and \
                 type(second_dict[key]) is dict:
             sign = ' '
-            result.append([str(key), dict_diff(value, second_dict[key]), sign])
+            result.append({
+                'key': str(key),
+                'value': dict_diff(value, second_dict[key]),
+                'sign': sign
+            })
             continue
 
         if key not in second_dict or key in second_dict \
@@ -47,7 +53,7 @@ def dict_diff(first_dict: dict, second_dict: dict) -> list:
             sign = '-'
         else:
             sign = ' '
-        result.append([f'{str(key)}: {to_lower(value)}', sign])
+        result.append({'key': str(key), 'value': to_lower(value), 'sign': sign})
 
     for key, value in second_dict.items():
         if key not in first_dict or key in first_dict \
@@ -55,37 +61,43 @@ def dict_diff(first_dict: dict, second_dict: dict) -> list:
             sign = '+'
         else:
             continue
-        result.append([f'{str(key)}: {to_lower(value)}', sign])
+        result.append({'key': str(key), 'value': to_lower(value), 'sign': sign})
 
     return result
 
 
-def parse_dict_data(value, replacer, spaces_count, counter):
+def stylish(value, replacer, spaces_count, counter):
     result = ''
-    sorted_value = sorted(value, key=lambda x: str(x[0]))
+    sorted_value = sorted(value, key=lambda x: x['key'])
 
     for item in sorted_value:
-        if type(item[1]) is list:
+        if type(item['value']) is list:
             result += \
-                f'{replacer*spaces_count}{to_primitive(item[2])}' \
-                f' {to_primitive(item[0])}:' \
-                f' {{\n{parse_dict_data(item[1], replacer, spaces_count=spaces_count + counter, counter=counter)}' \
+                f'{replacer*spaces_count}{to_primitive(item["sign"])}' \
+                f' {to_primitive(item["key"])}:' \
+                f' {{\n{stylish(item["value"], replacer, spaces_count=spaces_count + counter, counter=counter)}' \
                 f'{replacer*spaces_count}}}\n'  # noqa: E501
         else:
             result += \
-                f'{replacer*spaces_count}{to_primitive(item[1])}' \
-                f' {to_primitive(item[0])}\n'
+                f'{replacer*spaces_count}{to_primitive(item["sign"])}' \
+                f' {to_primitive(item["key"])}: {to_primitive(item["value"])}\n'
 
     return result
 
 
-def stringify(value, replacer=' ', spaces_count=1):
+def stringify(value, format, replacer=' ', spaces_count=1):
     if type(value) in (str, bool, int, float):
         return to_primitive(value)
-    return '{\n' + parse_dict_data(value, replacer, spaces_count, spaces_count) + '}'  # noqa: E501
+    if format == 'stylish':
+        return '{\n' + stylish(value, replacer, spaces_count, spaces_count) + '}'  # noqa: E501
+    return 'LOOOL'
 
 
-def generate_diff(path_to_first_file: str, path_to_second_file: str) -> str:
+def generate_diff(
+        path_to_first_file: str,
+        path_to_second_file: str,
+        format: str
+) -> str:
     yaml_extensions = ('.yml', '.yaml')
     json_extensions = '.json'
 
@@ -105,6 +117,6 @@ def generate_diff(path_to_first_file: str, path_to_second_file: str) -> str:
         )
 
     diff_dict = dict_diff(first_file_data, second_file_data)
-    result = stringify(diff_dict)
+    result = stringify(diff_dict, format)
 
     return result
