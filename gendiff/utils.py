@@ -32,6 +32,17 @@ def to_primitive(arg):
     return arg
 
 
+def added_dict(data):
+    result = []
+    for key, value in data.items():
+        result.append({
+            'key': key,
+            'value': added_dict(value) if type(value) is dict else value,
+            'sign': ' '
+        })
+    return result
+
+
 def dict_diff(first_dict: dict, second_dict: dict) -> list:
     result = []
 
@@ -56,17 +67,28 @@ def dict_diff(first_dict: dict, second_dict: dict) -> list:
         result.append({'key': str(key), 'value': to_lower(value), 'sign': sign})
 
     for key, value in second_dict.items():
-        if key not in first_dict or key in first_dict \
-                and first_dict[key] != value and type(value) != dict:
-            sign = '+'
+        sign = '+'
+
+        if key not in first_dict and type(value) == dict:
+            result.append({'key': str(key), 'value': added_dict(value), 'sign': sign})
+
+        elif key not in first_dict and type(value) != dict:
+            result.append({'key': str(key), 'value': to_lower(value), 'sign': sign})
+
+        elif key in first_dict and type(value) == dict and type(first_dict[key]) != dict:
+            result.append({'key': str(key), 'value': added_dict(value), 'sign': sign})
+
+        elif key in first_dict and first_dict[key] != value and type(value) != dict:
+            result.append({'key': str(key), 'value': to_lower(value), 'sign': sign})
+
         else:
             continue
-        result.append({'key': str(key), 'value': to_lower(value), 'sign': sign})
 
     return result
 
 
 def stylish(value, replacer, spaces_count, counter):
+
     result = ''
     sorted_value = sorted(value, key=lambda x: x['key'])
 
@@ -77,6 +99,7 @@ def stylish(value, replacer, spaces_count, counter):
                 f' {to_primitive(item["key"])}:' \
                 f' {{\n{stylish(item["value"], replacer, spaces_count=spaces_count + counter, counter=counter)}' \
                 f'{replacer*spaces_count}}}\n'  # noqa: E501
+
         else:
             result += \
                 f'{replacer*spaces_count}{to_primitive(item["sign"])}' \
@@ -85,11 +108,41 @@ def stylish(value, replacer, spaces_count, counter):
     return result
 
 
+def plain(value, previous_node=''):
+    result = []
+
+    for item in value:
+        current_node = item['key']
+
+        if previous_node:
+            current_node = f"{previous_node}.{current_node}"
+
+        if type(item['value']) is list:
+            result += plain(item['value'], previous_node=current_node)
+
+        if len(s := [b for b in value if b['key'] == item['key']]) == 2:
+            old_value = [f['value'] for f in s if f['sign'] == '-'][0]
+            new_value = [f['value'] for f in s if f['sign'] == '+'][0]
+            replacer = '[complex value]' if type(new_value) is list else new_value
+            result.append(f"Property '{current_node}' was updated. From '{old_value}' to '{replacer}'")
+
+        elif item['sign'] == '-':
+            result.append(f"Property '{current_node}' was removed")
+        elif item['sign'] == '+':
+            replacer = '[complex value]' if type(item["value"]) is list else item['value']
+            result.append(f"Property '{current_node}' was added with value: '{replacer}'")
+
+    result = sorted(list(set(result)))
+    return result
+
+
 def stringify(value, format, replacer=' ', spaces_count=1):
     if type(value) in (str, bool, int, float):
         return to_primitive(value)
     if format == 'stylish':
         return '{\n' + stylish(value, replacer, spaces_count, spaces_count) + '}'  # noqa: E501
+    elif format == 'plain':
+        return '\n'.join(plain(value))
     return 'LOOOL'
 
 
